@@ -17,13 +17,23 @@ from pathlib import Path
 WORD = "ultracrepidarian"
 
 
+def _chmod_best_effort(path: Path, mode: int) -> None:
+    """Best-effort chmod: the grader runs as uid 65534 with /output owned by
+    root, so chmodding the output directory raises PermissionError — that
+    must never fail the run. The file itself is ours, so its chmod applies."""
+    try:
+        os.chmod(path, mode)
+    except OSError:
+        pass
+
+
 def main() -> None:
     out_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
     out_dir.mkdir(parents=True, exist_ok=True)
-    os.chmod(out_dir, 0o755)  # grader collects outputs as another user
+    _chmod_best_effort(out_dir, 0o755)  # grader collects outputs as another user
     target = out_dir / "entry.txt"
     target.write_text(WORD, encoding="utf-8")
-    os.chmod(target, 0o644)
+    _chmod_best_effort(target, 0o644)
 
 
 if __name__ == "__main__":
